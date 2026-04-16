@@ -1,0 +1,1449 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Stunden">
+<meta name="theme-color" content="#2563eb">
+<link rel="manifest" href="manifest.json">
+<title>Stundenerfassung</title>
+<style>
+:root {
+  --primary: #2563eb;
+  --primary-light: #dbeafe;
+  --primary-dark: #1d4ed8;
+  --success: #16a34a;
+  --success-light: #dcfce7;
+  --danger: #dc2626;
+  --danger-light: #fee2e2;
+  --warning: #f59e0b;
+  --gray-50: #f8fafc;
+  --gray-100: #f1f5f9;
+  --gray-200: #e2e8f0;
+  --gray-300: #cbd5e1;
+  --gray-400: #94a3b8;
+  --gray-500: #64748b;
+  --gray-600: #475569;
+  --gray-700: #334155;
+  --gray-800: #1e293b;
+  --gray-900: #0f172a;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
+  --shadow-md: 0 4px 6px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.06);
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', system-ui, sans-serif;
+  background: var(--gray-50);
+  color: var(--gray-800);
+  min-height: 100vh;
+  min-height: 100dvh;
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;
+  padding-top: var(--safe-top);
+  padding-bottom: calc(70px + var(--safe-bottom));
+}
+/* Header */
+.app-header {
+  background: var(--primary);
+  color: white;
+  padding: 16px 20px;
+  font-size: 18px;
+  font-weight: 600;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.app-header .subtitle {
+  font-size: 13px;
+  font-weight: 400;
+  opacity: 0.85;
+}
+/* Tab Bar */
+.tab-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0; right: 0;
+  background: white;
+  border-top: 1px solid var(--gray-200);
+  display: flex;
+  padding-bottom: var(--safe-bottom);
+  z-index: 100;
+}
+.tab-bar button {
+  flex: 1;
+  border: none;
+  background: none;
+  padding: 8px 4px 10px;
+  font-size: 10px;
+  color: var(--gray-400);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  cursor: pointer;
+  transition: color 0.2s;
+  -webkit-tap-highlight-color: transparent;
+}
+.tab-bar button.active { color: var(--primary); }
+.tab-bar button svg { width: 24px; height: 24px; }
+/* Pages */
+.page { display: none; padding: 16px; }
+.page.active { display: block; }
+/* Cards */
+.card {
+  background: white;
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 12px;
+  box-shadow: var(--shadow);
+}
+.card-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gray-500);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 12px;
+}
+/* Timer */
+.timer-display {
+  text-align: center;
+  padding: 24px 0;
+}
+.timer-time {
+  font-size: 56px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--gray-900);
+  letter-spacing: -1px;
+}
+.timer-status {
+  font-size: 14px;
+  color: var(--gray-500);
+  margin-top: 4px;
+}
+.timer-status.running { color: var(--success); font-weight: 600; }
+.timer-status.paused { color: var(--warning); font-weight: 600; }
+.timer-break {
+  font-size: 14px;
+  color: var(--gray-500);
+  margin-top: 2px;
+}
+.btn-warning { background: var(--warning); color: white; }
+.btn-warning:active { background: #d97706; }
+.timer-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 14px 20px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  width: 100%;
+  transition: all 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn-primary { background: var(--primary); color: white; }
+.btn-primary:active { background: var(--primary-dark); }
+.btn-success { background: var(--success); color: white; }
+.btn-success:active { background: #15803d; }
+.btn-danger { background: var(--danger); color: white; }
+.btn-danger:active { background: #b91c1c; }
+.btn-outline {
+  background: white;
+  color: var(--primary);
+  border: 1.5px solid var(--primary);
+}
+.btn-outline:active { background: var(--primary-light); }
+.btn-sm { padding: 10px 14px; font-size: 14px; }
+.btn-row { display: flex; gap: 8px; }
+.btn-row .btn { flex: 1; }
+/* Inputs */
+.input-group { margin-bottom: 12px; }
+.input-group label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gray-600);
+  margin-bottom: 4px;
+}
+.input-group input,
+.input-group select,
+.input-group textarea {
+  width: 100%;
+  border: 1.5px solid var(--gray-200);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  font-size: 16px;
+  font-family: inherit;
+  color: var(--gray-800);
+  background: white;
+  transition: border-color 0.15s;
+  -webkit-appearance: none;
+}
+.input-group input:focus,
+.input-group select:focus,
+.input-group textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-light);
+}
+.input-group textarea { resize: vertical; min-height: 60px; }
+.input-row { display: flex; gap: 8px; }
+.input-row .input-group { flex: 1; }
+/* Entry list */
+.entry-item {
+  background: white;
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  margin-bottom: 8px;
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  transition: box-shadow 0.15s;
+}
+.entry-item:active { box-shadow: var(--shadow-md); }
+.entry-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 4px;
+}
+.entry-client {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--gray-800);
+}
+.entry-hours {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--primary);
+  white-space: nowrap;
+}
+.entry-work {
+  font-size: 14px;
+  color: var(--gray-600);
+  margin-bottom: 4px;
+}
+.entry-date {
+  font-size: 12px;
+  color: var(--gray-400);
+}
+/* Client list */
+.client-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--gray-100);
+}
+.client-item:last-child { border-bottom: none; }
+.client-name { font-size: 16px; font-weight: 500; }
+.client-actions { display: flex; gap: 8px; }
+.icon-btn {
+  border: none;
+  background: none;
+  padding: 6px;
+  cursor: pointer;
+  color: var(--gray-400);
+  border-radius: 6px;
+  -webkit-tap-highlight-color: transparent;
+}
+.icon-btn:active { background: var(--gray-100); }
+.icon-btn.danger:active { background: var(--danger-light); color: var(--danger); }
+/* Modal */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 200;
+  align-items: flex-end;
+  justify-content: center;
+  backdrop-filter: blur(2px);
+}
+.modal-overlay.active { display: flex; }
+.modal {
+  background: white;
+  border-radius: 16px 16px 0 0;
+  padding: 20px;
+  padding-bottom: calc(20px + var(--safe-bottom));
+  width: 100%;
+  max-width: 500px;
+  max-height: 85vh;
+  overflow-y: auto;
+  animation: slideUp 0.25s ease-out;
+}
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+.modal-title { font-size: 18px; font-weight: 700; }
+.modal-close {
+  border: none;
+  background: var(--gray-100);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gray-500);
+}
+/* Filter bar */
+.filter-bar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+.filter-chip {
+  border: 1.5px solid var(--gray-200);
+  background: white;
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  color: var(--gray-600);
+  -webkit-tap-highlight-color: transparent;
+}
+.filter-chip.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: white;
+}
+/* Summary stats */
+.stats-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.stat-card {
+  flex: 1;
+  background: white;
+  border-radius: var(--radius);
+  padding: 12px;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+.stat-value {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--primary);
+}
+.stat-label {
+  font-size: 11px;
+  color: var(--gray-500);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  margin-top: 2px;
+}
+/* Empty state */
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--gray-400);
+}
+.empty-state svg { width: 48px; height: 48px; margin-bottom: 8px; }
+.empty-state p { font-size: 15px; }
+/* Section spacer */
+.section-gap { height: 8px; }
+/* Date group header */
+.date-header {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gray-500);
+  padding: 8px 4px 4px;
+}
+/* Export options */
+.export-option {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  background: white;
+  border-radius: var(--radius);
+  margin-bottom: 8px;
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.export-option:active { background: var(--gray-50); }
+.export-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+.export-icon.csv { background: var(--success-light); color: var(--success); }
+.export-icon.pdf { background: var(--danger-light); color: var(--danger); }
+.export-text h3 { font-size: 16px; font-weight: 600; }
+.export-text p { font-size: 13px; color: var(--gray-500); margin-top: 2px; }
+</style>
+</head>
+<body>
+
+<!-- App Header -->
+<div class="app-header">
+  <div>
+    Stundenerfassung
+    <div class="subtitle" id="headerSubtitle">Bereit</div>
+  </div>
+</div>
+
+<!-- Page: Timer -->
+<div class="page active" id="pageTimer">
+  <div class="card">
+    <div class="timer-display">
+      <div class="timer-time" id="timerDisplay">00:00:00</div>
+      <div class="timer-status" id="timerStatus">Nicht gestartet</div>
+      <div class="timer-break" id="timerBreakDisplay"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="timer-fields">
+      <div class="input-group">
+        <label>Auftraggeber</label>
+        <select id="timerClient">
+          <option value="">Bitte wählen...</option>
+        </select>
+      </div>
+      <div class="input-group">
+        <label>Arbeit / Beschreibung</label>
+        <input type="text" id="timerWork" placeholder="Was wird gemacht?">
+      </div>
+      <div class="input-row">
+        <div class="input-group">
+          <label>Datum</label>
+          <input type="date" id="timerDate">
+        </div>
+        <div class="input-group">
+          <label>Startzeit</label>
+          <input type="time" id="timerStart">
+        </div>
+      </div>
+    </div>
+
+    <div id="timerButtons">
+      <button class="btn btn-success" id="btnStart" onclick="startTimer()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        Arbeit starten
+      </button>
+    </div>
+    <div id="timerRunningButtons" style="display:none;">
+      <div class="btn-row">
+        <button class="btn btn-warning" id="btnPause" onclick="pauseTimer()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+          Pause
+        </button>
+        <button class="btn btn-danger" onclick="stopTimer()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+          Beenden
+        </button>
+      </div>
+    </div>
+    <div id="timerPausedButtons" style="display:none;">
+      <div class="btn-row">
+        <button class="btn btn-success" onclick="resumeTimer()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          Weiter
+        </button>
+        <button class="btn btn-danger" onclick="stopTimer()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+          Beenden
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="manualEntryCard">
+    <div class="card-title">Manueller Eintrag</div>
+    <div class="timer-fields">
+      <div class="input-group">
+        <label>Auftraggeber</label>
+        <select id="manualClient">
+          <option value="">Bitte wählen...</option>
+        </select>
+      </div>
+      <div class="input-group">
+        <label>Arbeit / Beschreibung</label>
+        <input type="text" id="manualWork" placeholder="Was wurde gemacht?">
+      </div>
+      <div class="input-group">
+        <label>Datum</label>
+        <input type="date" id="manualDate">
+      </div>
+      <div class="input-row">
+        <div class="input-group">
+          <label>Von</label>
+          <input type="time" id="manualStart">
+        </div>
+        <div class="input-group">
+          <label>Bis</label>
+          <input type="time" id="manualEnd">
+        </div>
+      </div>
+      <div class="input-group">
+        <label>Pause (Minuten)</label>
+        <input type="number" id="manualBreak" value="0" min="0">
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="saveManualEntry()">Eintrag speichern</button>
+  </div>
+</div>
+
+<!-- Page: Entries -->
+<div class="page" id="pageEntries">
+  <div class="stats-row" id="statsRow"></div>
+  <div class="filter-bar" id="filterBar"></div>
+  <div id="entriesList"></div>
+</div>
+
+<!-- Page: Clients -->
+<div class="page" id="pageClients">
+  <div class="card">
+    <div class="card-title">Neuer Auftraggeber</div>
+    <div style="display:flex;gap:8px;">
+      <div class="input-group" style="flex:1;margin-bottom:0;">
+        <input type="text" id="newClientName" placeholder="Name des Auftraggebers">
+      </div>
+      <button class="btn btn-primary" style="width:auto;padding:12px 16px;" onclick="addClient()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">Auftraggeber</div>
+    <div id="clientsList"></div>
+  </div>
+</div>
+
+<!-- Page: Export -->
+<div class="page" id="pageExport">
+  <div class="card">
+    <div class="card-title">Zeitraum wählen</div>
+    <div class="input-row">
+      <div class="input-group">
+        <label>Von</label>
+        <input type="date" id="exportFrom">
+      </div>
+      <div class="input-group">
+        <label>Bis</label>
+        <input type="date" id="exportTo">
+      </div>
+    </div>
+    <div class="input-group">
+      <label>Auftraggeber (optional)</label>
+      <select id="exportClient">
+        <option value="">Alle</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="export-option" onclick="exportCSV()">
+    <div class="export-icon csv">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg>
+    </div>
+    <div class="export-text">
+      <h3>CSV / Excel</h3>
+      <p>Tabelle für Excel, Numbers oder Google Sheets</p>
+    </div>
+  </div>
+
+  <div class="export-option" onclick="exportPDF()">
+    <div class="export-icon pdf">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+    </div>
+    <div class="export-text">
+      <h3>PDF</h3>
+      <p>Übersichtliches Dokument zum Drucken oder Verschicken</p>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Eintrag bearbeiten</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="input-group">
+      <label>Auftraggeber</label>
+      <select id="editClient"></select>
+    </div>
+    <div class="input-group">
+      <label>Arbeit / Beschreibung</label>
+      <input type="text" id="editWork">
+    </div>
+    <div class="input-group">
+      <label>Datum</label>
+      <input type="date" id="editDate">
+    </div>
+    <div class="input-row">
+      <div class="input-group">
+        <label>Von</label>
+        <input type="time" id="editStart">
+      </div>
+      <div class="input-group">
+        <label>Bis</label>
+        <input type="time" id="editEnd">
+      </div>
+    </div>
+    <div class="input-group">
+      <label>Pause (Minuten)</label>
+      <input type="number" id="editBreak" min="0">
+    </div>
+    <div class="section-gap"></div>
+    <div class="btn-row">
+      <button class="btn btn-danger btn-sm" onclick="deleteEntry()">Löschen</button>
+      <button class="btn btn-primary btn-sm" onclick="saveEdit()">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<!-- Tab Bar -->
+<div class="tab-bar">
+  <button class="active" onclick="showPage('pageTimer', this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+    Timer
+  </button>
+  <button onclick="showPage('pageEntries', this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+    Einträge
+  </button>
+  <button onclick="showPage('pageClients', this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    Auftraggeber
+  </button>
+  <button onclick="showPage('pageExport', this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    Export
+  </button>
+</div>
+
+<script>
+// ==================== DATABASE (IndexedDB) ====================
+const DB_NAME = 'StundenDB';
+const DB_VERSION = 1;
+let db;
+
+function openDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    req.onupgradeneeded = e => {
+      const d = e.target.result;
+      if (!d.objectStoreNames.contains('entries')) {
+        const store = d.createObjectStore('entries', { keyPath: 'id' });
+        store.createIndex('date', 'date');
+        store.createIndex('client', 'client');
+      }
+      if (!d.objectStoreNames.contains('clients')) {
+        d.createObjectStore('clients', { keyPath: 'id' });
+      }
+      if (!d.objectStoreNames.contains('settings')) {
+        d.createObjectStore('settings', { keyPath: 'key' });
+      }
+    };
+    req.onsuccess = e => { db = e.target.result; resolve(db); };
+    req.onerror = e => reject(e.target.error);
+  });
+}
+
+function dbOp(storeName, mode, op) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(storeName, mode);
+    const store = tx.objectStore(storeName);
+    const req = op(store);
+    if (req) {
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    }
+    tx.oncomplete = () => { if (!req) resolve(); };
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+function getAllEntries() {
+  return dbOp('entries', 'readonly', s => s.getAll());
+}
+function saveEntry(entry) {
+  return dbOp('entries', 'readwrite', s => s.put(entry));
+}
+function deleteEntryDB(id) {
+  return dbOp('entries', 'readwrite', s => s.delete(id));
+}
+function getAllClients() {
+  return dbOp('clients', 'readonly', s => s.getAll());
+}
+function saveClient(client) {
+  return dbOp('clients', 'readwrite', s => s.put(client));
+}
+function deleteClientDB(id) {
+  return dbOp('clients', 'readwrite', s => s.delete(id));
+}
+function saveSetting(key, value) {
+  return dbOp('settings', 'readwrite', s => s.put({ key, value }));
+}
+function getSetting(key) {
+  return dbOp('settings', 'readonly', s => s.get(key)).then(r => r ? r.value : null);
+}
+
+// ==================== STATE ====================
+let timerInterval = null;
+let timerStartTime = null;
+let isRunning = false;
+let isPaused = false;
+let pauseStartedAt = null;
+let totalPausedMs = 0;
+let editingEntryId = null;
+let currentFilter = '';
+
+// ==================== NAVIGATION ====================
+function showPage(pageId, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-bar button').forEach(b => b.classList.remove('active'));
+  document.getElementById(pageId).classList.add('active');
+  if (btn) btn.classList.add('active');
+
+  if (pageId === 'pageEntries') renderEntries();
+  if (pageId === 'pageClients') renderClients();
+  if (pageId === 'pageExport') setupExportPage();
+}
+
+// ==================== TIMER ====================
+function formatDuration(ms) {
+  const totalSec = Math.floor(ms / 1000);
+  const h = String(Math.floor(totalSec / 3600)).padStart(2, '0');
+  const m = String(Math.floor((totalSec % 3600) / 60)).padStart(2, '0');
+  const s = String(totalSec % 60).padStart(2, '0');
+  return `${h}:${m}:${s}`;
+}
+
+function formatHours(minutes) {
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  if (h === 0) return `${m} Min`;
+  if (m === 0) return `${h} Std`;
+  return `${h} Std ${m} Min`;
+}
+
+function formatDecimalHours(minutes) {
+  return (minutes / 60).toFixed(2);
+}
+
+function updateTimerDisplay() {
+  if (!timerStartTime) return;
+  let elapsed;
+  if (isPaused) {
+    elapsed = pauseStartedAt - timerStartTime - totalPausedMs;
+  } else {
+    elapsed = Date.now() - timerStartTime - totalPausedMs;
+  }
+  document.getElementById('timerDisplay').textContent = formatDuration(Math.max(0, elapsed));
+
+  // Show break time
+  let currentPauseMs = totalPausedMs;
+  if (isPaused) currentPauseMs += Date.now() - pauseStartedAt;
+  if (currentPauseMs > 0) {
+    document.getElementById('timerBreakDisplay').textContent = 'Pause: ' + formatDuration(currentPauseMs);
+  }
+}
+
+async function startTimer() {
+  const client = document.getElementById('timerClient').value;
+  const work = document.getElementById('timerWork').value.trim();
+
+  if (!client) {
+    alert('Bitte wähle einen Auftraggeber aus.');
+    return;
+  }
+  if (!work) {
+    alert('Bitte gib eine Arbeitsbeschreibung ein.');
+    return;
+  }
+
+  const now = new Date();
+  const dateInput = document.getElementById('timerDate');
+  const startInput = document.getElementById('timerStart');
+
+  if (!dateInput.value) dateInput.value = now.toISOString().split('T')[0];
+  if (!startInput.value) {
+    startInput.value = now.toTimeString().slice(0, 5);
+  }
+
+  timerStartTime = Date.now();
+  isRunning = true;
+  isPaused = false;
+  pauseStartedAt = null;
+  totalPausedMs = 0;
+
+  // Save running state
+  await saveSetting('timerState', {
+    startTime: timerStartTime,
+    client,
+    work,
+    date: dateInput.value,
+    startOfDay: startInput.value,
+    isPaused: false,
+    pauseStartedAt: null,
+    totalPausedMs: 0
+  });
+
+  document.getElementById('timerButtons').style.display = 'none';
+  document.getElementById('timerRunningButtons').style.display = 'block';
+  document.getElementById('timerPausedButtons').style.display = 'none';
+  document.getElementById('timerBreakDisplay').textContent = '';
+  document.getElementById('timerStatus').textContent = 'Läuft...';
+  document.getElementById('timerStatus').className = 'timer-status running';
+  document.getElementById('headerSubtitle').textContent = 'Arbeit läuft...';
+  document.getElementById('manualEntryCard').style.display = 'none';
+
+  timerInterval = setInterval(updateTimerDisplay, 1000);
+}
+
+async function pauseTimer() {
+  isPaused = true;
+  pauseStartedAt = Date.now();
+  clearInterval(timerInterval);
+
+  // Update saved state
+  const state = await getSetting('timerState');
+  if (state) {
+    state.isPaused = true;
+    state.pauseStartedAt = pauseStartedAt;
+    state.totalPausedMs = totalPausedMs;
+    await saveSetting('timerState', state);
+  }
+
+  document.getElementById('timerRunningButtons').style.display = 'none';
+  document.getElementById('timerPausedButtons').style.display = 'block';
+  document.getElementById('timerStatus').textContent = 'Pause';
+  document.getElementById('timerStatus').className = 'timer-status paused';
+  document.getElementById('headerSubtitle').textContent = 'Pause';
+
+  // Keep updating break display while paused
+  timerInterval = setInterval(updateTimerDisplay, 1000);
+}
+
+async function resumeTimer() {
+  const pauseDuration = Date.now() - pauseStartedAt;
+  totalPausedMs += pauseDuration;
+  isPaused = false;
+  pauseStartedAt = null;
+
+  clearInterval(timerInterval);
+
+  // Update saved state
+  const state = await getSetting('timerState');
+  if (state) {
+    state.isPaused = false;
+    state.pauseStartedAt = null;
+    state.totalPausedMs = totalPausedMs;
+    await saveSetting('timerState', state);
+  }
+
+  document.getElementById('timerPausedButtons').style.display = 'none';
+  document.getElementById('timerRunningButtons').style.display = 'block';
+  document.getElementById('timerStatus').textContent = 'Läuft...';
+  document.getElementById('timerStatus').className = 'timer-status running';
+  document.getElementById('headerSubtitle').textContent = 'Arbeit läuft...';
+
+  timerInterval = setInterval(updateTimerDisplay, 1000);
+  updateTimerDisplay();
+}
+
+async function stopTimer() {
+  clearInterval(timerInterval);
+  timerInterval = null;
+  isRunning = false;
+
+  const state = await getSetting('timerState');
+  if (!state) return;
+
+  // If currently paused, add the current pause duration
+  let finalPausedMs = state.totalPausedMs || 0;
+  if (state.isPaused && state.pauseStartedAt) {
+    finalPausedMs += Date.now() - state.pauseStartedAt;
+  }
+  const breakMinutes = Math.round(finalPausedMs / 60000);
+
+  const endTime = new Date();
+  const endStr = endTime.toTimeString().slice(0, 5);
+
+  const startParts = state.startOfDay.split(':').map(Number);
+  const endParts = endStr.split(':').map(Number);
+  const startMin = startParts[0] * 60 + startParts[1];
+  const endMin = endParts[0] * 60 + endParts[1];
+  const durationMin = Math.max(0, endMin - startMin - breakMinutes);
+
+  const entry = {
+    id: Date.now().toString(),
+    client: state.client,
+    work: state.work,
+    date: state.date,
+    start: state.startOfDay,
+    end: endStr,
+    breakMinutes: breakMinutes,
+    durationMinutes: durationMin,
+    createdAt: new Date().toISOString()
+  };
+
+  await saveEntry(entry);
+  await saveSetting('timerState', null);
+
+  // Reset state
+  isPaused = false;
+  pauseStartedAt = null;
+  totalPausedMs = 0;
+
+  // Reset UI
+  document.getElementById('timerDisplay').textContent = '00:00:00';
+  document.getElementById('timerBreakDisplay').textContent = '';
+  document.getElementById('timerButtons').style.display = 'block';
+  document.getElementById('timerRunningButtons').style.display = 'none';
+  document.getElementById('timerPausedButtons').style.display = 'none';
+  document.getElementById('timerStatus').textContent = `Gespeichert: ${formatHours(durationMin)}` + (breakMinutes > 0 ? ` (Pause: ${breakMinutes} Min)` : '');
+  document.getElementById('timerStatus').className = 'timer-status';
+  document.getElementById('headerSubtitle').textContent = 'Bereit';
+  document.getElementById('manualEntryCard').style.display = 'block';
+
+  timerStartTime = null;
+}
+
+async function restoreTimer() {
+  const state = await getSetting('timerState');
+  if (state && state.startTime) {
+    timerStartTime = state.startTime;
+    isRunning = true;
+    totalPausedMs = state.totalPausedMs || 0;
+    isPaused = state.isPaused || false;
+    pauseStartedAt = state.pauseStartedAt || null;
+
+    document.getElementById('timerClient').value = state.client;
+    document.getElementById('timerWork').value = state.work;
+    document.getElementById('timerDate').value = state.date;
+    document.getElementById('timerStart').value = state.startOfDay;
+
+    document.getElementById('timerButtons').style.display = 'none';
+    document.getElementById('manualEntryCard').style.display = 'none';
+
+    if (isPaused) {
+      document.getElementById('timerRunningButtons').style.display = 'none';
+      document.getElementById('timerPausedButtons').style.display = 'block';
+      document.getElementById('timerStatus').textContent = 'Pause';
+      document.getElementById('timerStatus').className = 'timer-status paused';
+      document.getElementById('headerSubtitle').textContent = 'Pause';
+    } else {
+      document.getElementById('timerRunningButtons').style.display = 'block';
+      document.getElementById('timerPausedButtons').style.display = 'none';
+      document.getElementById('timerStatus').textContent = 'Läuft...';
+      document.getElementById('timerStatus').className = 'timer-status running';
+      document.getElementById('headerSubtitle').textContent = 'Arbeit läuft...';
+    }
+
+    updateTimerDisplay();
+    timerInterval = setInterval(updateTimerDisplay, 1000);
+  }
+}
+
+// ==================== MANUAL ENTRY ====================
+async function saveManualEntry() {
+  const client = document.getElementById('manualClient').value;
+  const work = document.getElementById('manualWork').value.trim();
+  const date = document.getElementById('manualDate').value;
+  const start = document.getElementById('manualStart').value;
+  const end = document.getElementById('manualEnd').value;
+  const breakMin = parseInt(document.getElementById('manualBreak').value) || 0;
+
+  if (!client || !work || !date || !start || !end) {
+    alert('Bitte fülle alle Felder aus.');
+    return;
+  }
+
+  const startParts = start.split(':').map(Number);
+  const endParts = end.split(':').map(Number);
+  const startMin = startParts[0] * 60 + startParts[1];
+  const endMin = endParts[0] * 60 + endParts[1];
+  let durationMin = endMin - startMin - breakMin;
+
+  if (durationMin <= 0) {
+    alert('Die Endzeit muss nach der Startzeit liegen und die Pause darf nicht länger sein als die Arbeitszeit.');
+    return;
+  }
+
+  const entry = {
+    id: Date.now().toString(),
+    client,
+    work,
+    date,
+    start,
+    end,
+    breakMinutes: breakMin,
+    durationMinutes: durationMin,
+    createdAt: new Date().toISOString()
+  };
+
+  await saveEntry(entry);
+
+  // Reset form
+  document.getElementById('manualWork').value = '';
+  document.getElementById('manualStart').value = '';
+  document.getElementById('manualEnd').value = '';
+  document.getElementById('manualBreak').value = '0';
+
+  alert('Eintrag gespeichert!');
+}
+
+// ==================== ENTRIES LIST ====================
+async function renderEntries() {
+  const entries = await getAllEntries();
+  const clients = await getAllClients();
+
+  // Sort by date desc, then start desc
+  entries.sort((a, b) => {
+    if (b.date !== a.date) return b.date.localeCompare(a.date);
+    return b.start.localeCompare(a.start);
+  });
+
+  // Filter
+  const filtered = currentFilter
+    ? entries.filter(e => e.client === currentFilter)
+    : entries;
+
+  // Stats
+  const thisMonth = new Date().toISOString().slice(0, 7);
+  const monthEntries = entries.filter(e => e.date.startsWith(thisMonth));
+  const totalMinMonth = monthEntries.reduce((sum, e) => sum + e.durationMinutes, 0);
+  const totalMinAll = entries.reduce((sum, e) => sum + e.durationMinutes, 0);
+
+  document.getElementById('statsRow').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-value">${formatDecimalHours(totalMinMonth)}</div>
+      <div class="stat-label">Std. diesen Monat</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">${monthEntries.length}</div>
+      <div class="stat-label">Einträge</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">${formatDecimalHours(totalMinAll)}</div>
+      <div class="stat-label">Std. gesamt</div>
+    </div>
+  `;
+
+  // Filter chips
+  const clientNames = [...new Set(entries.map(e => e.client))];
+  let filterHTML = `<button class="filter-chip ${!currentFilter ? 'active' : ''}" onclick="setFilter('')">Alle</button>`;
+  clientNames.forEach(c => {
+    const cl = clients.find(cl => cl.id === c);
+    const name = cl ? cl.name : c;
+    filterHTML += `<button class="filter-chip ${currentFilter === c ? 'active' : ''}" onclick="setFilter('${c}')">${name}</button>`;
+  });
+  document.getElementById('filterBar').innerHTML = filterHTML;
+
+  // Entries grouped by date
+  if (filtered.length === 0) {
+    document.getElementById('entriesList').innerHTML = `
+      <div class="empty-state">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <p>Noch keine Einträge vorhanden</p>
+      </div>`;
+    return;
+  }
+
+  let html = '';
+  let lastDate = '';
+  filtered.forEach(entry => {
+    if (entry.date !== lastDate) {
+      lastDate = entry.date;
+      const d = new Date(entry.date + 'T00:00:00');
+      const dayStr = d.toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+      html += `<div class="date-header">${dayStr}</div>`;
+    }
+    const cl = clients.find(c => c.id === entry.client);
+    const clientName = cl ? cl.name : entry.client;
+
+    html += `
+      <div class="entry-item" onclick="openEditModal('${entry.id}')">
+        <div class="entry-top">
+          <span class="entry-client">${esc(clientName)}</span>
+          <span class="entry-hours">${formatDecimalHours(entry.durationMinutes)} Std</span>
+        </div>
+        <div class="entry-work">${esc(entry.work)}</div>
+        <div class="entry-date">${entry.start} – ${entry.end}${entry.breakMinutes > 0 ? ' (Pause: ' + entry.breakMinutes + ' Min)' : ''}</div>
+      </div>`;
+  });
+
+  document.getElementById('entriesList').innerHTML = html;
+}
+
+function setFilter(clientId) {
+  currentFilter = clientId;
+  renderEntries();
+}
+
+// ==================== EDIT MODAL ====================
+async function openEditModal(id) {
+  editingEntryId = id;
+  const entries = await getAllEntries();
+  const entry = entries.find(e => e.id === id);
+  if (!entry) return;
+
+  await populateClientSelect('editClient');
+  document.getElementById('editClient').value = entry.client;
+  document.getElementById('editWork').value = entry.work;
+  document.getElementById('editDate').value = entry.date;
+  document.getElementById('editStart').value = entry.start;
+  document.getElementById('editEnd').value = entry.end;
+  document.getElementById('editBreak').value = entry.breakMinutes || 0;
+
+  document.getElementById('editModal').classList.add('active');
+}
+
+function closeModal() {
+  document.getElementById('editModal').classList.remove('active');
+  editingEntryId = null;
+}
+
+async function saveEdit() {
+  if (!editingEntryId) return;
+
+  const client = document.getElementById('editClient').value;
+  const work = document.getElementById('editWork').value.trim();
+  const date = document.getElementById('editDate').value;
+  const start = document.getElementById('editStart').value;
+  const end = document.getElementById('editEnd').value;
+  const breakMin = parseInt(document.getElementById('editBreak').value) || 0;
+
+  if (!client || !work || !date || !start || !end) {
+    alert('Bitte fülle alle Felder aus.');
+    return;
+  }
+
+  const startParts = start.split(':').map(Number);
+  const endParts = end.split(':').map(Number);
+  const durationMin = (endParts[0] * 60 + endParts[1]) - (startParts[0] * 60 + startParts[1]) - breakMin;
+
+  if (durationMin <= 0) {
+    alert('Ungültige Zeiten.');
+    return;
+  }
+
+  const entry = {
+    id: editingEntryId,
+    client,
+    work,
+    date,
+    start,
+    end,
+    breakMinutes: breakMin,
+    durationMinutes: durationMin,
+    updatedAt: new Date().toISOString()
+  };
+
+  await saveEntry(entry);
+  closeModal();
+  renderEntries();
+}
+
+async function deleteEntry() {
+  if (!editingEntryId) return;
+  if (!confirm('Eintrag wirklich löschen?')) return;
+  await deleteEntryDB(editingEntryId);
+  closeModal();
+  renderEntries();
+}
+
+// ==================== CLIENTS ====================
+async function addClient() {
+  const input = document.getElementById('newClientName');
+  const name = input.value.trim();
+  if (!name) return;
+
+  const client = {
+    id: Date.now().toString(),
+    name,
+    createdAt: new Date().toISOString()
+  };
+
+  await saveClient(client);
+  input.value = '';
+  renderClients();
+  refreshClientSelects();
+}
+
+async function renderClients() {
+  const clients = await getAllClients();
+  clients.sort((a, b) => a.name.localeCompare(b.name));
+
+  if (clients.length === 0) {
+    document.getElementById('clientsList').innerHTML = `
+      <div class="empty-state">
+        <p>Noch keine Auftraggeber angelegt</p>
+      </div>`;
+    return;
+  }
+
+  let html = '';
+  clients.forEach(c => {
+    html += `
+      <div class="client-item">
+        <span class="client-name">${esc(c.name)}</span>
+        <div class="client-actions">
+          <button class="icon-btn" onclick="editClientName('${c.id}', '${esc(c.name)}')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </button>
+          <button class="icon-btn danger" onclick="removeClient('${c.id}')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          </button>
+        </div>
+      </div>`;
+  });
+  document.getElementById('clientsList').innerHTML = html;
+}
+
+async function editClientName(id, currentName) {
+  const newName = prompt('Neuer Name:', currentName);
+  if (!newName || newName.trim() === currentName) return;
+  await saveClient({ id, name: newName.trim() });
+  renderClients();
+  refreshClientSelects();
+}
+
+async function removeClient(id) {
+  if (!confirm('Auftraggeber wirklich löschen?')) return;
+  await deleteClientDB(id);
+  renderClients();
+  refreshClientSelects();
+}
+
+async function populateClientSelect(selectId) {
+  const clients = await getAllClients();
+  clients.sort((a, b) => a.name.localeCompare(b.name));
+  const select = document.getElementById(selectId);
+  const currentVal = select.value;
+  select.innerHTML = '<option value="">Bitte wählen...</option>';
+  clients.forEach(c => {
+    select.innerHTML += `<option value="${c.id}">${esc(c.name)}</option>`;
+  });
+  if (currentVal) select.value = currentVal;
+}
+
+async function refreshClientSelects() {
+  await populateClientSelect('timerClient');
+  await populateClientSelect('manualClient');
+  await populateClientSelect('exportClient');
+}
+
+// ==================== EXPORT ====================
+function setupExportPage() {
+  const now = new Date();
+  const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+  document.getElementById('exportFrom').value = firstDay.toISOString().split('T')[0];
+  document.getElementById('exportTo').value = now.toISOString().split('T')[0];
+  populateClientSelect('exportClient');
+}
+
+async function getFilteredExportEntries() {
+  const from = document.getElementById('exportFrom').value;
+  const to = document.getElementById('exportTo').value;
+  const clientFilter = document.getElementById('exportClient').value;
+
+  let entries = await getAllEntries();
+  entries = entries.filter(e => {
+    if (from && e.date < from) return false;
+    if (to && e.date > to) return false;
+    if (clientFilter && e.client !== clientFilter) return false;
+    return true;
+  });
+  entries.sort((a, b) => a.date.localeCompare(b.date) || a.start.localeCompare(b.start));
+  return entries;
+}
+
+async function exportCSV() {
+  const entries = await getFilteredExportEntries();
+  const clients = await getAllClients();
+
+  if (entries.length === 0) {
+    alert('Keine Einträge im gewählten Zeitraum.');
+    return;
+  }
+
+  let csv = 'Datum;Auftraggeber;Arbeit;Von;Bis;Pause (Min);Dauer (Std)\n';
+  entries.forEach(e => {
+    const cl = clients.find(c => c.id === e.client);
+    const clientName = cl ? cl.name : e.client;
+    csv += `${e.date};${clientName};${e.work};${e.start};${e.end};${e.breakMinutes};${formatDecimalHours(e.durationMinutes)}\n`;
+  });
+
+  const totalMin = entries.reduce((s, e) => s + e.durationMinutes, 0);
+  csv += `\n;;Gesamt;;;${formatDecimalHours(totalMin)}\n`;
+
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  downloadBlob(blob, `Stundenerfassung_${document.getElementById('exportFrom').value}_${document.getElementById('exportTo').value}.csv`);
+}
+
+async function exportPDF() {
+  const entries = await getFilteredExportEntries();
+  const clients = await getAllClients();
+
+  if (entries.length === 0) {
+    alert('Keine Einträge im gewählten Zeitraum.');
+    return;
+  }
+
+  const from = document.getElementById('exportFrom').value;
+  const to = document.getElementById('exportTo').value;
+  const totalMin = entries.reduce((s, e) => s + e.durationMinutes, 0);
+
+  // Group by client
+  const grouped = {};
+  entries.forEach(e => {
+    if (!grouped[e.client]) grouped[e.client] = [];
+    grouped[e.client].push(e);
+  });
+
+  let tableRows = '';
+  entries.forEach(e => {
+    const cl = clients.find(c => c.id === e.client);
+    const clientName = cl ? cl.name : e.client;
+    const d = new Date(e.date + 'T00:00:00');
+    const dateStr = d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    tableRows += `<tr>
+      <td>${dateStr}</td>
+      <td>${esc(clientName)}</td>
+      <td>${esc(e.work)}</td>
+      <td>${e.start}</td>
+      <td>${e.end}</td>
+      <td style="text-align:center">${e.breakMinutes}</td>
+      <td style="text-align:right;font-weight:600">${formatDecimalHours(e.durationMinutes)}</td>
+    </tr>`;
+  });
+
+  // Client summary
+  let summaryRows = '';
+  Object.keys(grouped).forEach(cid => {
+    const cl = clients.find(c => c.id === cid);
+    const name = cl ? cl.name : cid;
+    const mins = grouped[cid].reduce((s, e) => s + e.durationMinutes, 0);
+    summaryRows += `<tr><td>${esc(name)}</td><td style="text-align:right;font-weight:600">${formatDecimalHours(mins)} Std</td></tr>`;
+  });
+
+  const fromDate = new Date(from + 'T00:00:00').toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  const toDate = new Date(to + 'T00:00:00').toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
+  <style>
+    @page { size: A4 landscape; margin: 15mm; }
+    body { font-family: -apple-system, Helvetica, Arial, sans-serif; font-size: 11px; color: #1e293b; }
+    h1 { font-size: 20px; margin-bottom: 4px; }
+    .period { color: #64748b; margin-bottom: 16px; font-size: 12px; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+    th { background: #2563eb; color: white; text-align: left; padding: 8px 10px; font-size: 11px; }
+    td { padding: 7px 10px; border-bottom: 1px solid #e2e8f0; font-size: 11px; }
+    tr:nth-child(even) { background: #f8fafc; }
+    .total-row { background: #dbeafe !important; font-weight: 700; }
+    .summary { margin-top: 16px; }
+    .summary h2 { font-size: 14px; margin-bottom: 8px; }
+    .summary table { width: auto; min-width: 300px; }
+    @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+  </style></head><body>
+  <h1>Stundenerfassung</h1>
+  <div class="period">${fromDate} – ${toDate}</div>
+  <table>
+    <thead><tr><th>Datum</th><th>Auftraggeber</th><th>Arbeit</th><th>Von</th><th>Bis</th><th>Pause</th><th style="text-align:right">Stunden</th></tr></thead>
+    <tbody>${tableRows}
+    <tr class="total-row"><td colspan="6">Gesamt</td><td style="text-align:right">${formatDecimalHours(totalMin)} Std</td></tr>
+    </tbody>
+  </table>
+  <div class="summary"><h2>Zusammenfassung nach Auftraggeber</h2>
+  <table><tbody>${summaryRows}</tbody></table></div>
+  </body></html>`;
+
+  const pdfWindow = window.open('', '_blank');
+  pdfWindow.document.write(html);
+  pdfWindow.document.close();
+  setTimeout(() => pdfWindow.print(), 500);
+}
+
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// ==================== HELPERS ====================
+function esc(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function setTodayDefaults() {
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('timerDate').value = today;
+  document.getElementById('manualDate').value = today;
+}
+
+// ==================== INIT ====================
+async function init() {
+  await openDB();
+  await refreshClientSelects();
+  await restoreTimer();
+  setTodayDefaults();
+
+  // Register Service Worker
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  }
+}
+
+// Close modal on overlay click
+document.getElementById('editModal').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeModal();
+});
+
+init();
+</script>
+</body>
+</html>
